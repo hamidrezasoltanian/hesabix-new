@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
+use App\Entity\Notification;
 use App\Entity\Person;
 use App\Service\Explore;
 use App\Service\Extractor;
@@ -440,6 +441,10 @@ class StoreroomController extends AbstractController
             $ticketItem->setDes($item['des']);
             $ticketItem->setCommodity($row->getCommodity());
             $ticketItem->setType($item['type']);
+            if (array_key_exists('lotNo', $item) && $item['lotNo'])
+                $ticketItem->setLotNo($item['lotNo']);
+            if (array_key_exists('expiryDate', $item) && $item['expiryDate'])
+                $ticketItem->setExpiryDate($item['expiryDate']);
             $entityManager->persist($ticketItem);
         }
         $entityManager->flush();
@@ -547,7 +552,7 @@ class StoreroomController extends AbstractController
         $res['person'] = $provider->Entity2ArrayJustIncludes($ticket->getPerson(), ['getKeshvar', 'getOstan', 'getShahr', 'getAddress', 'getNikename', 'getCodeeghtesadi', 'getPostalcode', 'getName', 'getTel', 'getSabt'], 0);
         //get rows
         $rows = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket' => $ticket]);
-        $res['commodities'] = $provider->ArrayEntity2ArrayJustIncludes($rows, ['getId', 'getDes', 'getCode', 'getName', 'getCommodity', 'getUnit', 'getCount', 'getReferal'], 2);
+        $res['commodities'] = $provider->ArrayEntity2ArrayJustIncludes($rows, ['getId', 'getDes', 'getCode', 'getName', 'getCommodity', 'getUnit', 'getCount', 'getReferal', 'getLotNo', 'getExpiryDate'], 2);
 
         //calculate rows data
         $this->calcStoreRemaining($res, $ticket->getDoc(), $entityManager);
@@ -673,6 +678,60 @@ class StoreroomController extends AbstractController
             false
         );
         return $this->json(['id' => $pdfPid]);
+    }
+
+    #[Route('/api/storeroom/fefo/suggest/{storeId}/{commodityId}', name: 'app_storeroom_fefo_suggest')]
+    public function app_storeroom_fefo_suggest(string $storeId, string $commodityId, Access $access, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('store');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $store = $entityManager->getRepository(Storeroom::class)->find($storeId);
+        if (!$store || $store->getBid()->getId() != $acc['bid']->getId())
+            throw $this->createNotFoundException('انبار یافت نشد');
+
+        $commodity = $entityManager->getRepository(Commodity::class)->find($commodityId);
+        if (!$commodity || $commodity->getBid()->getId() != $acc['bid']->getId())
+            throw $this->createNotFoundException('کالا یافت نشد');
+
+        $inputItems = $entityManager->getRepository(StoreroomItem::class)->findBy([
+            'Storeroom' => $store,
+            'commodity' => $commodity,
+            'type' => 'input'
+        ]);
+        $outputItems = $entityManager->getRepository(StoreroomItem::class)->findBy([
+            'Storeroom' => $store,
+            'commodity' => $commodity,
+            'type' => 'output'
+        ]);
+
+        $lots = [];
+        foreach ($inputItems as $item) {
+            $key = $item->getLotNo() ?: '__no_lot__';
+            if (!isset($lots[$key])) {
+                $lots[$key] = [
+                    'lotNo' => $item->getLotNo(),
+                    'expiryDate' => $item->getExpiryDate(),
+                    'available' => 0,
+                ];
+            }
+            $lots[$key]['available'] += (int)$item->getCount();
+        }
+        foreach ($outputItems as $item) {
+            $key = $item->getLotNo() ?: '__no_lot__';
+            if (isset($lots[$key]))
+                $lots[$key]['available'] -= (int)$item->getCount();
+        }
+
+        $result = array_values(array_filter($lots, fn($l) => $l['available'] > 0));
+        usort($result, function ($a, $b) {
+            if (!$a['expiryDate']) return 1;
+            if (!$b['expiryDate']) return -1;
+            return strcmp($a['expiryDate'], $b['expiryDate']);
+        });
+
+        return $this->json($result);
     }
 
     #[Route('/api/storeroom/exist/print', name: 'app_storeroom_exist_print')]

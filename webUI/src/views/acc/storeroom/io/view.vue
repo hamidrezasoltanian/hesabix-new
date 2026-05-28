@@ -48,6 +48,8 @@ interface Row {
   remain: number
   des: string
   referal: string
+  lotNo: string | null
+  expiryDate: string | null
 }
 
 interface Item {
@@ -286,6 +288,10 @@ onMounted(() => {
                 <div class="pa-2 text-right">
                   <div>شرح: {{ item.des }}</div>
                   <div>ارجاع: {{ item.referal }}</div>
+                  <div v-if="item.lotNo">
+                    <v-chip size="small" color="blue" class="ml-1">لات: {{ item.lotNo }}</v-chip>
+                    <v-chip v-if="item.expiryDate" size="small" color="orange">انقضا: {{ item.expiryDate }}</v-chip>
+                  </div>
                 </div>
               </td>
             </tr>

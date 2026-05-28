@@ -33,6 +33,12 @@ class StoreroomItem
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $referal = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $lotNo = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $expiryDate = null;
+
     #[ORM\ManyToOne(inversedBy: 'storeroomItems')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Business $bid = null;
@@ -138,6 +144,30 @@ class StoreroomItem
     public function setStoreroom(?Storeroom $Storeroom): static
     {
         $this->Storeroom = $Storeroom;
+
+        return $this;
+    }
+
+    public function getLotNo(): ?string
+    {
+        return $this->lotNo;
+    }
+
+    public function setLotNo(?string $lotNo): static
+    {
+        $this->lotNo = $lotNo;
+
+        return $this;
+    }
+
+    public function getExpiryDate(): ?string
+    {
+        return $this->expiryDate;
+    }
+
+    public function setExpiryDate(?string $expiryDate): static
+    {
+        $this->expiryDate = $expiryDate;
 
         return $this;
     }

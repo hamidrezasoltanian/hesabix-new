@@ -139,6 +139,22 @@
               density="compact"
             />
           </template>
+          <template v-slot:item.lotNo="{ item, index }">
+            <v-text-field
+              v-model="items[index].lotNo"
+              placeholder="مثال: L240501"
+              variant="outlined"
+              density="compact"
+            />
+          </template>
+          <template v-slot:item.expiryDate="{ item, index }">
+            <v-text-field
+              v-model="items[index].expiryDate"
+              placeholder="۱۴۰۴/۰۶/۳۱"
+              variant="outlined"
+              density="compact"
+            />
+          </template>
           <template v-slot:item.referal="{ item, index }">
             <v-text-field
               v-model="items[index].referral"
@@ -202,6 +218,8 @@ interface Commodity {
   des: string;
   referral: string;
   type: string;
+  lotNo: string;
+  expiryDate: string;
 }
 
 interface Ticket {
@@ -255,6 +273,8 @@ const headers = [
   { title: "از قبل", key: "countBefore" },
   { title: "باقی‌مانده", key: "remain" },
   { title: "تعداد", key: "commdityCount", sortable: true },
+  { title: "شماره لات", key: "lotNo" },
+  { title: "تاریخ انقضا", key: "expiryDate" },
   { title: "ارجاع", key: "referal", sortable: true },
   { title: "توضیحات", key: "des" },
 ]
@@ -363,7 +383,9 @@ const loadData = async () => {
       ticketCount: 0,
       docCount: element.commdityCount,
       des: '',
-      type: 'input'
+      type: 'input',
+      lotNo: '',
+      expiryDate: ''
     }))
 
     ticket.value.store = storeResponse.data

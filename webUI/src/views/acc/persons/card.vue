@@ -184,44 +184,142 @@
       </v-col>
     </v-row>
 
-    <!-- جدول تراکنش‌ها -->
+    <!-- تب‌ها: تراکنش‌ها + مطالبات -->
     <v-row dense>
       <v-col cols="12">
-        <v-data-table v-model="itemsSelected" :headers="headers" :items="items" :search="searchValue" :loading="loading"
-          show-select dense :items-per-page="25" class="elevation-2 rounded-lg" :header-props="{ class: 'custom-header' }">
-          <template v-slot:top>
-            <v-toolbar flat dense color="grey-lighten-4" class="rounded-t-lg">
-              <v-toolbar-title class="text-subtitle-1">{{ $t('pages.person_card.transactions') }}</v-toolbar-title>
-              <v-spacer></v-spacer>
-              <v-text-field v-model="searchValue" dense hide-details
-                prepend-inner-icon="mdi-magnify" />
-            </v-toolbar>
-          </template>
-          <template v-slot:item.operation="{ item }">
-            <v-btn variant="plain" icon size="small" :to="'/acc/accounting/view/' + item.code" color="success">
-              <v-icon small>mdi-eye</v-icon>
-            </v-btn>
-          </template>
-          <template v-slot:item.code="{ item }">
-            {{ $filters.formatNumber(item.code) }}
-          </template>
-          <template v-slot:item.type="{ item }">
-            <v-btn variant="plain" text size="small" :to="getTypeRoute(item.type, item.code)" class="text-none">
-              {{ getTypeLabel(item.type) }}
-            </v-btn>
-          </template>
-          <template v-slot:item.bd="{ item }">
-            {{ $filters.formatNumber(item.bd) }}
-          </template>
-          <template v-slot:item.bs="{ item }">
-            {{ $filters.formatNumber(item.bs) }}
-          </template>
-          <template v-slot:no-data>
-            {{ $t('pages.person_card.no_data') }}
-          </template>
-        </v-data-table>
+        <v-tabs v-model="activeTab" color="primary" class="mb-2">
+          <v-tab value="transactions">
+            <v-icon start>mdi-swap-horizontal</v-icon>
+            تراکنش‌ها
+          </v-tab>
+          <v-tab value="followups">
+            <v-icon start>mdi-phone-clock</v-icon>
+            پیگیری مطالبات
+            <v-chip v-if="pendingFollowupsCount > 0" size="x-small" color="orange" class="mr-1">
+              {{ pendingFollowupsCount }}
+            </v-chip>
+          </v-tab>
+        </v-tabs>
+
+        <v-window v-model="activeTab">
+          <!-- تراکنش‌ها -->
+          <v-window-item value="transactions">
+            <v-data-table v-model="itemsSelected" :headers="headers" :items="items" :search="searchValue" :loading="loading"
+              show-select dense :items-per-page="25" class="elevation-2 rounded-lg" :header-props="{ class: 'custom-header' }">
+              <template v-slot:top>
+                <v-toolbar flat dense color="grey-lighten-4" class="rounded-t-lg">
+                  <v-toolbar-title class="text-subtitle-1">{{ $t('pages.person_card.transactions') }}</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                  <v-text-field v-model="searchValue" dense hide-details prepend-inner-icon="mdi-magnify" />
+                </v-toolbar>
+              </template>
+              <template v-slot:item.operation="{ item }">
+                <v-btn variant="plain" icon size="small" :to="'/acc/accounting/view/' + item.code" color="success">
+                  <v-icon small>mdi-eye</v-icon>
+                </v-btn>
+              </template>
+              <template v-slot:item.code="{ item }">{{ $filters.formatNumber(item.code) }}</template>
+              <template v-slot:item.type="{ item }">
+                <v-btn variant="plain" text size="small" :to="getTypeRoute(item.type, item.code)" class="text-none">
+                  {{ getTypeLabel(item.type) }}
+                </v-btn>
+              </template>
+              <template v-slot:item.bd="{ item }">{{ $filters.formatNumber(item.bd) }}</template>
+              <template v-slot:item.bs="{ item }">{{ $filters.formatNumber(item.bs) }}</template>
+              <template v-slot:no-data>{{ $t('pages.person_card.no_data') }}</template>
+            </v-data-table>
+          </v-window-item>
+
+          <!-- پیگیری مطالبات -->
+          <v-window-item value="followups">
+            <v-card variant="outlined">
+              <v-toolbar flat density="compact" color="grey-lighten-4">
+                <v-toolbar-title class="text-subtitle-1">پیگیری‌های این شخص</v-toolbar-title>
+                <v-spacer />
+                <v-btn size="small" color="primary" prepend-icon="mdi-plus" @click="openFollowupDialog(null)">
+                  پیگیری جدید
+                </v-btn>
+              </v-toolbar>
+              <v-data-table
+                :headers="followupHeaders"
+                :items="followups"
+                :loading="followupLoading"
+                density="compact"
+                :header-props="{ class: 'custom-header' }"
+              >
+                <template v-slot:item.status="{ item }">
+                  <v-chip :color="followupStatusColor(item.status)" size="x-small">
+                    {{ followupStatusLabel(item.status) }}
+                  </v-chip>
+                </template>
+                <template v-slot:item.type="{ item }">
+                  <v-chip size="x-small" variant="outlined">{{ followupTypeLabel(item.type) }}</v-chip>
+                </template>
+                <template v-slot:item.followupDate="{ item }">
+                  <span :class="followupOverdue(item) ? 'text-red font-weight-bold' : ''">
+                    {{ item.followupDate || '—' }}
+                  </span>
+                </template>
+                <template v-slot:item.amount="{ item }">
+                  {{ item.amount ? $filters.formatNumber(item.amount) : '—' }}
+                </template>
+                <template v-slot:item.actions="{ item }">
+                  <v-btn icon size="x-small" variant="text" color="primary" @click="openFollowupDialog(item)">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn icon size="x-small" variant="text" color="success" @click="markFollowupDone(item)" :disabled="item.status === 'done'">
+                    <v-icon>mdi-check</v-icon>
+                  </v-btn>
+                  <v-btn icon size="x-small" variant="text" color="error" @click="deleteFollowup(item)">
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </template>
+                <template v-slot:no-data>هیچ پیگیری ثبت نشده است.</template>
+              </v-data-table>
+            </v-card>
+          </v-window-item>
+        </v-window>
       </v-col>
     </v-row>
+
+  <!-- دیالوگ پیگیری -->
+  <v-dialog v-model="followupDialog" max-width="560" persistent>
+    <v-card>
+      <v-toolbar color="primary" density="compact">
+        <v-toolbar-title>{{ followupEdit.id ? 'ویرایش پیگیری' : 'پیگیری جدید' }}</v-toolbar-title>
+        <v-spacer /><v-btn icon @click="followupDialog = false"><v-icon>mdi-close</v-icon></v-btn>
+      </v-toolbar>
+      <v-card-text class="pt-4">
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-select v-model="followupEdit.type" :items="followupTypeOptions" item-title="label" item-value="value"
+              label="نوع فعالیت" variant="outlined" density="compact" />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-select v-model="followupEdit.status" :items="followupStatusOptions" item-title="label" item-value="value"
+              label="وضعیت" variant="outlined" density="compact" />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field v-model="followupEdit.date" label="تاریخ (شمسی)" variant="outlined" density="compact" placeholder="۱۴۰۴/۰۳/۱۵" />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field v-model="followupEdit.followupDate" label="تاریخ پیگیری بعدی" variant="outlined" density="compact" placeholder="۱۴۰۴/۰۳/۲۲" />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field v-model="followupEdit.amount" label="مبلغ" variant="outlined" density="compact" type="number" />
+          </v-col>
+          <v-col cols="12">
+            <v-textarea v-model="followupEdit.des" label="توضیحات" variant="outlined" density="compact" rows="2" />
+          </v-col>
+        </v-row>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn @click="followupDialog = false">انصراف</v-btn>
+        <v-btn color="primary" :loading="followupSaving" @click="saveFollowup">ذخیره</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   </v-container>
 
   <v-overlay :value="loading" contained class="align-center justify-center">
@@ -245,7 +343,35 @@ export default {
       items: [],
       loading: ref(false),
       dialog: false,
-      debounceTimeout: null, // برای مدیریت debounce
+      debounceTimeout: null,
+      activeTab: 'transactions',
+      followups: [],
+      followupLoading: false,
+      followupDialog: false,
+      followupSaving: false,
+      followupEdit: { id: null, date: '', followupDate: null, type: 'call', des: null, amount: null, status: 'pending' },
+      followupTypeOptions: [
+        { value: 'call', label: 'تماس تلفنی' },
+        { value: 'visit', label: 'ویزیت' },
+        { value: 'payment', label: 'وصول مطالبه' },
+        { value: 'message', label: 'پیام' },
+        { value: 'note', label: 'یادداشت' },
+        { value: 'complaint', label: 'شکایت' },
+      ],
+      followupStatusOptions: [
+        { value: 'pending', label: 'در انتظار' },
+        { value: 'done', label: 'انجام شده' },
+        { value: 'cancelled', label: 'لغو شده' },
+      ],
+      followupHeaders: [
+        { title: 'نوع', key: 'type' },
+        { title: 'تاریخ', key: 'date', sortable: true },
+        { title: 'پیگیری بعدی', key: 'followupDate', sortable: true },
+        { title: 'مبلغ', key: 'amount' },
+        { title: 'وضعیت', key: 'status' },
+        { title: 'توضیحات', key: 'des' },
+        { title: 'عملیات', key: 'actions', sortable: false },
+      ],
       headers: [
         { title: this.$t('dialog.operation'), key: "operation", align: "center", sortable: false },
         { title: this.$t('dialog.type'), key: "type", align: "center", sortable: true },
@@ -257,6 +383,11 @@ export default {
         { title: this.$t('pages.person_card.credit'), key: "bs", align: "center", sortable: true },
       ],
     };
+  },
+  computed: {
+    pendingFollowupsCount() {
+      return this.followups.filter(f => f.status === 'pending').length;
+    }
   },
   mounted() {
     this.loadData();
@@ -321,6 +452,7 @@ export default {
 
         const rowsResponse = await axios.post('/api/accounting/rows/search', { type: 'person', id });
         this.items = rowsResponse.data;
+        await this.loadFollowups();
       } catch (error) {
         console.error('Load person error:', error);
         this.selectedPerson = { accounts: [], balance: 0, bs: 0, bd: 0 };
@@ -386,6 +518,70 @@ export default {
         pass_cheque: '/acc/accounting/view/',
       };
       return routes[type] + code;
+    },
+    // ── مطالبات ──
+    followupStatusColor(s) {
+      return { pending: 'orange', done: 'green', cancelled: 'grey' }[s] ?? 'grey';
+    },
+    followupStatusLabel(s) {
+      return this.followupStatusOptions.find(o => o.value === s)?.label ?? s;
+    },
+    followupTypeLabel(t) {
+      return this.followupTypeOptions.find(o => o.value === t)?.label ?? t;
+    },
+    followupOverdue(item) {
+      if (item.status !== 'pending' || !item.followupDate) return false;
+      return item.followupDate < new Date().toISOString().slice(0, 10);
+    },
+    async loadFollowups() {
+      if (!this.selectedPerson?.id) return;
+      this.followupLoading = true;
+      try {
+        const res = await axios.post('/api/acc/person/followup/list', { personId: this.selectedPerson.id });
+        this.followups = res.data;
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.followupLoading = false;
+      }
+    },
+    openFollowupDialog(item) {
+      this.followupEdit = item
+        ? { ...item }
+        : { id: null, date: '', followupDate: null, type: 'call', des: null, amount: null, status: 'pending' };
+      this.followupDialog = true;
+    },
+    async saveFollowup() {
+      if (!this.followupEdit.type || !this.followupEdit.date) return;
+      this.followupSaving = true;
+      try {
+        await axios.post('/api/acc/person/followup/mod', {
+          id: this.followupEdit.id,
+          personId: this.selectedPerson.id,
+          type: this.followupEdit.type,
+          date: this.followupEdit.date,
+          followupDate: this.followupEdit.followupDate,
+          des: this.followupEdit.des,
+          amount: this.followupEdit.amount,
+          status: this.followupEdit.status,
+        });
+        this.followupDialog = false;
+        await this.loadFollowups();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.followupSaving = false;
+      }
+    },
+    async markFollowupDone(item) {
+      await axios.post('/api/acc/person/followup/mod', { ...item, personId: this.selectedPerson.id, status: 'done' });
+      await this.loadFollowups();
+    },
+    async deleteFollowup(item) {
+      const r = await Swal.fire({ text: 'پیگیری حذف شود؟', icon: 'question', showCancelButton: true, confirmButtonText: 'بله', cancelButtonText: 'خیر' });
+      if (!r.isConfirmed) return;
+      await axios.post(`/api/acc/person/followup/del/${item.id}`);
+      await this.loadFollowups();
     },
     getTypeLabel(type) {
       const labels = {

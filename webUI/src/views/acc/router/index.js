@@ -642,6 +642,12 @@ const router = createRouter({
                 import ('../views/shareholder/list.vue'),
         },
         {
+            path: '/acc/persons/followup/list',
+            name: 'persons_followup_list',
+            component: () =>
+                import ('../views/persons/followup/list.vue'),
+        },
+        {
             path: "/:catchAll(.*)",
             name: "not-found",
             component: () =>

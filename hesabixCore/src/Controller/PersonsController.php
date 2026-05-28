@@ -1939,4 +1939,131 @@ class PersonsController extends AbstractController
         }
     }
 
+    // ─── مطالبات و پیگیری ───────────────────────────────────────────────
+
+    #[Route('/api/acc/person/followup/list', name: 'api_person_followup_list')]
+    public function api_person_followup_list(Request $request, Access $access, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = json_decode($request->getContent(), true) ?? [];
+
+        $criteria = ['bid' => $acc['bid'], 'year' => $acc['year']];
+        if (!empty($params['personId'])) {
+            $person = $entityManager->getRepository(\App\Entity\Person::class)->findOneBy(['id' => $params['personId'], 'bid' => $acc['bid']]);
+            if ($person) $criteria['person'] = $person;
+        }
+        if (!empty($params['status']))
+            $criteria['status'] = $params['status'];
+
+        $items = $entityManager->getRepository(\App\Entity\PersonFollowup::class)->findBy($criteria, ['date' => 'DESC']);
+
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = [
+                'id' => $item->getId(),
+                'date' => $item->getDate(),
+                'followupDate' => $item->getFollowupDate(),
+                'type' => $item->getType(),
+                'des' => $item->getDes(),
+                'amount' => $item->getAmount(),
+                'status' => $item->getStatus(),
+                'person' => [
+                    'id' => $item->getPerson()->getId(),
+                    'nikename' => $item->getPerson()->getNikename(),
+                ],
+                'submitter' => $item->getSubmitter()->getMobile(),
+            ];
+        }
+        return $this->json($result);
+    }
+
+    #[Route('/api/acc/person/followup/mod', name: 'api_person_followup_mod')]
+    public function api_person_followup_mod(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = json_decode($request->getContent(), true) ?? [];
+
+        if (empty($params['personId']) || empty($params['type']) || empty($params['date']))
+            return $this->json(['result' => -1]);
+
+        $person = $entityManager->getRepository(\App\Entity\Person::class)->findOneBy(['id' => $params['personId'], 'bid' => $acc['bid']]);
+        if (!$person)
+            throw $this->createNotFoundException('شخص یافت نشد');
+
+        if (!empty($params['id'])) {
+            $item = $entityManager->getRepository(\App\Entity\PersonFollowup::class)->findOneBy(['id' => $params['id'], 'bid' => $acc['bid']]);
+            if (!$item) throw $this->createNotFoundException();
+        } else {
+            $item = new \App\Entity\PersonFollowup();
+            $item->setBid($acc['bid']);
+            $item->setYear($acc['year']);
+            $item->setSubmitter($this->getUser());
+        }
+
+        $item->setPerson($person);
+        $item->setDate($params['date']);
+        $item->setType($params['type']);
+        $item->setDes($params['des'] ?? null);
+        $item->setAmount(!empty($params['amount']) ? (string)$params['amount'] : null);
+        $item->setFollowupDate($params['followupDate'] ?? null);
+        $item->setStatus($params['status'] ?? 'pending');
+
+        $entityManager->persist($item);
+        $entityManager->flush();
+        $log->insert('مطالبات', 'پیگیری برای شخص ' . $person->getNikename() . ' ثبت شد.', $this->getUser(), $acc['bid']);
+        return $this->json(['result' => 1, 'id' => $item->getId()]);
+    }
+
+    #[Route('/api/acc/person/followup/del/{id}', name: 'api_person_followup_del')]
+    public function api_person_followup_del(int $id, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $item = $entityManager->getRepository(\App\Entity\PersonFollowup::class)->findOneBy(['id' => $id, 'bid' => $acc['bid']]);
+        if (!$item) throw $this->createNotFoundException();
+
+        $entityManager->remove($item);
+        $entityManager->flush();
+        $log->insert('مطالبات', 'پیگیری حذف شد.', $this->getUser(), $acc['bid']);
+        return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/acc/person/followups/pending', name: 'api_person_followups_pending')]
+    public function api_person_followups_pending(Access $access, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $items = $entityManager->getRepository(\App\Entity\PersonFollowup::class)->findBy(
+            ['bid' => $acc['bid'], 'year' => $acc['year'], 'status' => 'pending'],
+            ['followupDate' => 'ASC']
+        );
+
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = [
+                'id' => $item->getId(),
+                'date' => $item->getDate(),
+                'followupDate' => $item->getFollowupDate(),
+                'type' => $item->getType(),
+                'des' => $item->getDes(),
+                'amount' => $item->getAmount(),
+                'status' => $item->getStatus(),
+                'person' => [
+                    'id' => $item->getPerson()->getId(),
+                    'nikename' => $item->getPerson()->getNikename(),
+                    'mobile' => $item->getPerson()->getMobile(),
+                ],
+            ];
+        }
+        return $this->json($result);
+    }
+
 }
