@@ -24,7 +24,7 @@ class HesabdariTable
     #[ORM\Column(length: 255)]
     private ?string $type = null;
 
-    #[ORM\Column(length: 255, unique: true)]
+    #[ORM\Column(length: 255)]
     private ?string $code = null;
 
     #[ORM\OneToMany(mappedBy: 'ref', targetEntity: HesabdariRow::class)]
@@ -35,6 +35,9 @@ class HesabdariTable
 
     #[ORM\ManyToOne(inversedBy: 'hesabdariTables')]
     private ?Business $bid = null;
+
+    #[ORM\Column(options: ['default' => true])]
+    private bool $active = true;
 
     public function __construct()
     {
@@ -147,4 +150,7 @@ class HesabdariTable
 
         return $this;
     }
+
+    public function isActive(): bool { return $this->active; }
+    public function setActive(bool $active): static { $this->active = $active; return $this; }
 }

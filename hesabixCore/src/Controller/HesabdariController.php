@@ -985,13 +985,12 @@ class HesabdariController extends AbstractController
     private function getFilteredChildsLabel(EntityManagerInterface $entityManager, HesabdariTable $node, Business $business): array
     {
         $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
-            'upper' => $node
+            'upper' => $node,
+            'active' => true,
         ]);
         $temp = [];
         foreach ($childs as $child) {
-            $childBid = $child->getBid(); // شیء Business یا null
-
-            // فقط نودهایی که عمومی هستند (bid=null) یا متعلق به کسب‌وکار فعلی‌اند
+            $childBid = $child->getBid();
             if ($childBid === null || ($childBid && $childBid->getId() === $business->getId())) {
                 $temp[] = $child->getCode();
             }
@@ -1026,17 +1025,15 @@ class HesabdariController extends AbstractController
         return $this->json([]);
     }
 
-    // متد اصلاح‌شده برای فیلتر کردن زیرمجموعه‌ها بر اساس bid
     private function getFilteredChilds(EntityManagerInterface $entityManager, HesabdariTable $node, Business $business): array
     {
         $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
-            'upper' => $node
+            'upper' => $node,
+            'active' => true,
         ]);
         $temp = [];
         foreach ($childs as $child) {
-            $childBid = $child->getBid(); // شیء Business یا null
-
-            // فقط نودهایی که عمومی هستند (bid=null) یا متعلق به کسب‌وکار فعلی‌اند
+            $childBid = $child->getBid();
             if ($childBid === null || ($childBid && $childBid->getId() === $business->getId())) {
                 if ($child->getType() === 'calc') {
                     if ($this->hasChild($entityManager, $child)) {
@@ -1059,7 +1056,8 @@ class HesabdariController extends AbstractController
     private function getChildsLabel(EntityManagerInterface $entityManager, mixed $node)
     {
         $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
-            'upper' => $node
+            'upper' => $node,
+            'active' => true,
         ]);
         $temp = [];
         foreach ($childs as $child) {
@@ -1068,21 +1066,19 @@ class HesabdariController extends AbstractController
         return $temp;
     }
 
-    private function hasChild(EntityManagerInterface $entityManager, mixed $node)
+    private function hasChild(EntityManagerInterface $entityManager, mixed $node): bool
     {
-        if (
-            count($entityManager->getRepository(HesabdariTable::class)->findBy([
-                'upper' => $node
-            ])) != 0
-        )
-            return true;
-        return false;
+        return count($entityManager->getRepository(HesabdariTable::class)->findBy([
+            'upper' => $node,
+            'active' => true,
+        ])) > 0;
     }
 
     private function getChilds(EntityManagerInterface $entityManager, mixed $node)
     {
         $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
-            'upper' => $node
+            'upper' => $node,
+            'active' => true,
         ]);
         $temp = [];
         foreach ($childs as $child) {
@@ -1122,27 +1118,32 @@ class HesabdariController extends AbstractController
             return $this->json(['result' => 0, 'message' => 'ردیف حساب والد پیدا نشد'], 404);
         }
 
-        $maxAttempts = 10;
-        $uniqueCode = null;
-        for ($i = 0; $i < $maxAttempts; $i++) {
-            $code = (string) rand(1000, 999999);
-            $existingNode = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => $code]);
-            if (!$existingNode) {
-                $uniqueCode = $code;
-                break;
+        // Generate next sequential code (max existing code + 1, min 1000)
+        $allCodesRaw = $entityManager->createQueryBuilder()
+            ->select('t.code')
+            ->from(HesabdariTable::class, 't')
+            ->where('t.bid = :bid OR t.bid IS NULL')
+            ->setParameter('bid', $acc['bid'])
+            ->getQuery()
+            ->getScalarResult();
+        $maxCode = 999;
+        foreach ($allCodesRaw as $row) {
+            if (ctype_digit((string)$row['code'])) {
+                $maxCode = max($maxCode, (int)$row['code']);
             }
         }
+        $uniqueCode = (string)($maxCode + 1);
 
-        if ($uniqueCode === null) {
-            return $this->json(['result' => 0, 'message' => 'امکان تولید کد منحصربه‌فرد برای ردیف حساب وجود ندارد'], 500);
-        }
+        $allowedTypes = ['calc', 'person', 'bank', 'cashdesk', 'salary', 'cheque'];
+        $nodeType = (isset($params['type']) && in_array($params['type'], $allowedTypes))
+            ? $params['type'] : 'calc';
 
         $newNode = new HesabdariTable();
-        $newNode->setName($params['text']);
+        $newNode->setName(trim($params['text']));
         $newNode->setCode($uniqueCode);
         $newNode->setBid($acc['bid']);
         $newNode->setUpper($parentNode);
-        $newNode->setType('calc');
+        $newNode->setType($nodeType);
 
         $entityManager->persist($newNode);
         $entityManager->flush();
@@ -1183,7 +1184,7 @@ class HesabdariController extends AbstractController
         }
 
         $oldName = $node->getName();
-        $node->setName($params['text']);
+        $node->setName(trim($params['text']));
         $entityManager->persist($node);
         $entityManager->flush();
 
@@ -1222,21 +1223,24 @@ class HesabdariController extends AbstractController
             return $this->json(['result' => 0, 'message' => 'ردیف حساب عمومی قابل حذف نیست'], 403);
         }
 
-        $relatedDocs = $entityManager->getRepository(HesabdariRow::class)->findBy(['ref' => $node]);
-        if (count($relatedDocs) > 0) {
-            return $this->json(['result' => 0, 'message' => 'ردیف حساب به دلیل داشتن سند حسابداری قابل حذف نیست'], 403);
-        }
-
-        $children = $entityManager->getRepository(HesabdariTable::class)->findBy(['upper' => $node]);
-        if (count($children) > 0) {
+        $activeChildren = $entityManager->getRepository(HesabdariTable::class)->findBy(['upper' => $node, 'active' => true]);
+        if (count($activeChildren) > 0) {
             return $this->json(['result' => 0, 'message' => 'ردیف حساب به دلیل داشتن زیرمجموعه قابل حذف نیست'], 403);
         }
 
         $code = $node->getCode();
-        $entityManager->remove($node);
-        $entityManager->flush();
 
-        $log->insert('حسابداری', 'ردیف حساب با کد ' . $code . ' حذف شد.', $this->getUser(), $acc['bid']);
+        // Soft delete: if has accounting rows keep record but hide; otherwise remove physically
+        $relatedDocs = $entityManager->getRepository(HesabdariRow::class)->findBy(['ref' => $node]);
+        if (count($relatedDocs) > 0) {
+            $node->setActive(false);
+            $entityManager->flush();
+        } else {
+            $entityManager->remove($node);
+            $entityManager->flush();
+        }
+
+        $log->insert('حسابداری', 'ردیف حساب با کد ' . $code . ' حذف/غیرفعال شد.', $this->getUser(), $acc['bid']);
 
         return $this->json(['result' => 1, 'id' => $code]);
     }
@@ -1312,7 +1316,8 @@ class HesabdariController extends AbstractController
             $children = $entityManager->getRepository(HesabdariTable::class)->findBy([
                 'upper' => $node,
                 'bid' => [$acc['bid']->getId(), null],
-            ], ['code' => 'ASC']); // مرتب‌سازی بر اساس کد
+                'active' => true,
+            ], ['code' => 'ASC']);
 
             $result = [];
             foreach ($children as $child) {
@@ -1358,6 +1363,7 @@ class HesabdariController extends AbstractController
             $children = $entityManager->getRepository(HesabdariTable::class)->findBy([
                 'upper' => $node,
                 'bid' => [$acc['bid']->getId(), null],
+                'active' => true,
             ]);
 
             $result = [];
