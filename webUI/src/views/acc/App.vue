@@ -828,6 +828,23 @@ export default {
           </template>
         </v-list-item>
       </v-list-group>
+      <!-- CRM Module -->
+      <v-list-group v-show="permissions.join">
+        <template v-slot:activator="{ props }">
+          <v-list-item class="text-dark" v-bind="props" prepend-icon="mdi-handshake" title="CRM فروش"></v-list-item>
+        </template>
+        <v-list-item to="/acc/sales/centers"><v-list-item-title>مراکز فروش</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/activity"><v-list-item-title>فعالیت‌ها</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/pipeline"><v-list-item-title>پایپ‌لاین</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/calendar"><v-list-item-title>تقویم</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/checklist"><v-list-item-title>چک‌لیست روزانه</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/kpi"><v-list-item-title>داشبورد KPI</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/manager"><v-list-item-title>مرور مدیریتی</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/provinces"><v-list-item-title>نقشه استانی</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/import"><v-list-item-title>ایمپورت مراکز</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/sales/backup"><v-list-item-title>پشتیبان‌گیری</v-list-item-title></v-list-item>
+      </v-list-group>
+
       <v-list-item class="text-dark" v-if="permissions.owner" to="/acc/sms/panel">
         <template v-slot:prepend><v-icon icon="mdi-message-cog" color="primary"></v-icon></template>
         <v-list-item-title>

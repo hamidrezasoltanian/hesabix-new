@@ -678,6 +678,48 @@ const router = createRouter({
                 import ('../views/sales/activity/index.vue'),
         },
         {
+            path: '/acc/sales/calendar',
+            name: 'sales_calendar',
+            component: () =>
+                import ('../views/sales/calendar/index.vue'),
+        },
+        {
+            path: '/acc/sales/checklist',
+            name: 'sales_checklist',
+            component: () =>
+                import ('../views/sales/checklist/index.vue'),
+        },
+        {
+            path: '/acc/sales/kpi',
+            name: 'sales_kpi',
+            component: () =>
+                import ('../views/sales/kpi/index.vue'),
+        },
+        {
+            path: '/acc/sales/manager',
+            name: 'sales_manager',
+            component: () =>
+                import ('../views/sales/manager/index.vue'),
+        },
+        {
+            path: '/acc/sales/provinces',
+            name: 'sales_provinces',
+            component: () =>
+                import ('../views/sales/provinces/index.vue'),
+        },
+        {
+            path: '/acc/sales/import',
+            name: 'sales_import',
+            component: () =>
+                import ('../views/sales/import/index.vue'),
+        },
+        {
+            path: '/acc/sales/backup',
+            name: 'sales_backup',
+            component: () =>
+                import ('../views/sales/backup/index.vue'),
+        },
+        {
             path: "/:catchAll(.*)",
             name: "not-found",
             component: () =>
