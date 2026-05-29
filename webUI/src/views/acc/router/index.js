@@ -660,10 +660,22 @@ const router = createRouter({
                 import ('../views/sales/pipeline/index.vue'),
         },
         {
+            path: '/acc/sales/centers',
+            name: 'sales_centers_list',
+            component: () =>
+                import ('../views/sales/centers/index.vue'),
+        },
+        {
             path: '/acc/sales/center/:id',
             name: 'sales_center_detail',
             component: () =>
                 import ('../views/sales/center/detail.vue'),
+        },
+        {
+            path: '/acc/sales/activity',
+            name: 'sales_activity_log',
+            component: () =>
+                import ('../views/sales/activity/index.vue'),
         },
         {
             path: "/:catchAll(.*)",

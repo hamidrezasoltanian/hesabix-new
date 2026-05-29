@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\SalesCenterRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SalesCenterRepository::class)]
@@ -32,6 +34,18 @@ class SalesCenter
     #[ORM\Column(nullable: true)]
     private ?int $potential = null;
 
+    // طبقه‌بندی لید: customer/lead/opportunity/clue/none/no_usage
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $lead = null;
+
+    // وضعیت CRM مرکز: no_contact/initial_contact/meeting_done/proposal_sent/contract_closed/inactive
+    #[ORM\Column(length: 30, nullable: true, options: ['default' => 'no_contact'])]
+    private ?string $crmStatus = 'no_contact';
+
+    // تاریخ پیگیری بعدی (شمسی YYYY/MM/DD)
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $followupDate = null;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true)]
     private ?User $owner = null;
@@ -48,6 +62,15 @@ class SalesCenter
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true)]
     private ?Person $person = null;
+
+    #[ORM\ManyToMany(targetEntity: SalesCenterTag::class)]
+    #[ORM\JoinTable(name: 'sales_center_tag_assignment')]
+    private Collection $tags;
+
+    public function __construct()
+    {
+        $this->tags = new ArrayCollection();
+    }
 
     public function getId(): ?int { return $this->id; }
 
@@ -69,6 +92,15 @@ class SalesCenter
     public function getPotential(): ?int { return $this->potential; }
     public function setPotential(?int $potential): static { $this->potential = $potential; return $this; }
 
+    public function getLead(): ?string { return $this->lead; }
+    public function setLead(?string $lead): static { $this->lead = $lead; return $this; }
+
+    public function getCrmStatus(): ?string { return $this->crmStatus; }
+    public function setCrmStatus(?string $crmStatus): static { $this->crmStatus = $crmStatus; return $this; }
+
+    public function getFollowupDate(): ?string { return $this->followupDate; }
+    public function setFollowupDate(?string $followupDate): static { $this->followupDate = $followupDate; return $this; }
+
     public function getOwner(): ?User { return $this->owner; }
     public function setOwner(?User $owner): static { $this->owner = $owner; return $this; }
 
@@ -83,4 +115,16 @@ class SalesCenter
 
     public function getPerson(): ?Person { return $this->person; }
     public function setPerson(?Person $person): static { $this->person = $person; return $this; }
+
+    public function getTags(): Collection { return $this->tags; }
+    public function addTag(SalesCenterTag $tag): static
+    {
+        if (!$this->tags->contains($tag)) $this->tags->add($tag);
+        return $this;
+    }
+    public function removeTag(SalesCenterTag $tag): static
+    {
+        $this->tags->removeElement($tag);
+        return $this;
+    }
 }

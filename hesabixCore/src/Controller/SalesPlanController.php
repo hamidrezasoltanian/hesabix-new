@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\SalesCenter;
+use App\Entity\SalesCenterTag;
 use App\Entity\User;
 use App\Entity\WeekPlan;
 use App\Service\Access;
@@ -18,14 +19,61 @@ class SalesPlanController extends AbstractController
 {
     // ─── مراکز فروش ───────────────────────────────────────────────────
 
-    #[Route('/api/acc/salescenter/list', name: 'api_salescenter_list')]
-    public function list(Access $access, EntityManagerInterface $em): JsonResponse
+    #[Route('/api/acc/salescenter/list', name: 'api_salescenter_list', methods: ['GET', 'POST'])]
+    public function list(Request $request, Access $access, Jdate $jdate, EntityManagerInterface $em): JsonResponse
     {
         $acc = $access->hasRole('join');
         if (!$acc) throw $this->createAccessDeniedException();
+        $p = json_decode($request->getContent(), true) ?? [];
 
-        $centers = $em->getRepository(SalesCenter::class)->findBy(['bid' => $acc['bid'], 'active' => true]);
-        return $this->json(array_map(fn($c) => $this->centerToArray($c), $centers));
+        $qb = $em->createQueryBuilder()
+            ->select('c')->from(SalesCenter::class, 'c')
+            ->where('c.bid = :bid AND c.active = true')
+            ->setParameter('bid', $acc['bid'])
+            ->orderBy('c.name', 'ASC');
+
+        if (!empty($p['crmStatus'])) $qb->andWhere('c.crmStatus = :cs')->setParameter('cs', $p['crmStatus']);
+        if (!empty($p['lead']))      $qb->andWhere('c.lead = :lead')->setParameter('lead', $p['lead']);
+        if (!empty($p['potential'])) $qb->andWhere('c.potential = :pot')->setParameter('pot', (int)$p['potential']);
+        if (!empty($p['ownerId']))   $qb->andWhere('c.owner = :owner')->setParameter('owner', (int)$p['ownerId']);
+        if (!empty($p['search']))    $qb->andWhere('c.name LIKE :q')->setParameter('q', '%' . $p['search'] . '%');
+
+        $centers = $qb->getQuery()->getResult();
+        $today = $jdate->getToday();
+
+        return $this->json(array_map(function ($c) use ($today) {
+            $arr = $this->centerToArray($c);
+            $arr['overdue'] = $c->getFollowupDate() && $c->getFollowupDate() < $today;
+            return $arr;
+        }, $centers));
+    }
+
+    #[Route('/api/acc/salescenter/get/{id}', name: 'api_salescenter_get')]
+    public function getOne(int $id, Access $access, Jdate $jdate, EntityManagerInterface $em): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc) throw $this->createAccessDeniedException();
+        $center = $em->getRepository(SalesCenter::class)->findOneBy(['id' => $id, 'bid' => $acc['bid']]);
+        if (!$center) throw $this->createNotFoundException();
+        $arr = $this->centerToArray($center);
+        $arr['overdue'] = $center->getFollowupDate() && $center->getFollowupDate() < $jdate->getToday();
+        return $this->json($arr);
+    }
+
+    #[Route('/api/acc/salescenter/setstatus/{id}', name: 'api_salescenter_setstatus', methods: ['POST'])]
+    public function setStatus(int $id, Request $request, Access $access, EntityManagerInterface $em): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc) throw $this->createAccessDeniedException();
+        $p = json_decode($request->getContent(), true) ?? [];
+        $center = $em->getRepository(SalesCenter::class)->findOneBy(['id' => $id, 'bid' => $acc['bid']]);
+        if (!$center) throw $this->createNotFoundException();
+        $allowed = ['no_contact','initial_contact','meeting_done','proposal_sent','contract_closed','inactive'];
+        if (!empty($p['crmStatus']) && in_array($p['crmStatus'], $allowed))
+            $center->setCrmStatus($p['crmStatus']);
+        if (array_key_exists('followupDate', $p)) $center->setFollowupDate($p['followupDate'] ?: null);
+        $em->flush();
+        return $this->json(['result' => 1]);
     }
 
     #[Route('/api/acc/salescenter/mod', name: 'api_salescenter_mod')]
@@ -44,11 +92,14 @@ class SalesPlanController extends AbstractController
         if (!$center) throw $this->createNotFoundException();
 
         $center->setBid($acc['bid']);
-        $center->setName($p['name']);
+        $center->setName(trim($p['name']));
         $center->setProvince($p['province'] ?? null);
         $center->setCity($p['city'] ?? null);
-        $center->setType($p['type'] ?? 'customer');
+        $center->setType($p['type'] ?? null);
         $center->setPotential(!empty($p['potential']) ? (int)$p['potential'] : null);
+        $center->setLead($p['lead'] ?? null);
+        $center->setCrmStatus($p['crmStatus'] ?? 'no_contact');
+        $center->setFollowupDate($p['followupDate'] ?? null);
         $center->setTel($p['tel'] ?? null);
         $center->setAddress($p['address'] ?? null);
         $center->setActive(($p['active'] ?? true) == true);
@@ -58,6 +109,15 @@ class SalesPlanController extends AbstractController
             $center->setOwner($owner);
         } else {
             $center->setOwner(null);
+        }
+
+        // Sync tags
+        if (isset($p['tagIds']) && is_array($p['tagIds'])) {
+            foreach ($center->getTags() as $existing) $center->removeTag($existing);
+            foreach ($p['tagIds'] as $tagId) {
+                $tag = $em->getRepository(SalesCenterTag::class)->findOneBy(['id' => $tagId, 'bid' => $acc['bid']]);
+                if ($tag) $center->addTag($tag);
+            }
         }
 
         $em->persist($center);
@@ -219,16 +279,20 @@ class SalesPlanController extends AbstractController
     private function centerToArray(SalesCenter $c): array
     {
         return [
-            'id'        => $c->getId(),
-            'name'      => $c->getName(),
-            'province'  => $c->getProvince(),
-            'city'      => $c->getCity(),
-            'type'      => $c->getType(),
-            'potential' => $c->getPotential(),
-            'tel'       => $c->getTel(),
-            'address'   => $c->getAddress(),
-            'active'    => $c->isActive(),
-            'owner'     => $c->getOwner() ? ['id' => $c->getOwner()->getId(), 'mobile' => $c->getOwner()->getMobile()] : null,
+            'id'           => $c->getId(),
+            'name'         => $c->getName(),
+            'province'     => $c->getProvince(),
+            'city'         => $c->getCity(),
+            'type'         => $c->getType(),
+            'potential'    => $c->getPotential(),
+            'lead'         => $c->getLead(),
+            'crmStatus'    => $c->getCrmStatus() ?? 'no_contact',
+            'followupDate' => $c->getFollowupDate(),
+            'tel'          => $c->getTel(),
+            'address'      => $c->getAddress(),
+            'active'       => $c->isActive(),
+            'owner'        => $c->getOwner() ? ['id' => $c->getOwner()->getId(), 'mobile' => $c->getOwner()->getMobile()] : null,
+            'tags'         => array_map(fn($t) => ['id' => $t->getId(), 'name' => $t->getName(), 'color' => $t->getColor()], $c->getTags()->toArray()),
         ];
     }
 
