@@ -648,6 +648,12 @@ const router = createRouter({
                 import ('../views/persons/followup/list.vue'),
         },
         {
+            path: '/acc/persons/weekplan',
+            name: 'persons_weekplan',
+            component: () =>
+                import ('../views/persons/weekplan/index.vue'),
+        },
+        {
             path: "/:catchAll(.*)",
             name: "not-found",
             component: () =>
