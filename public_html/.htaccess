@@ -1,15 +1,52 @@
 DirectoryIndex index.php
 
+# ── Security Headers ──────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    # Uncomment and set your domain once you have HTTPS:
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+
+# ── Block access to sensitive files ──────────────────────────────────────────
+<FilesMatch "\.(env|lock|json|yaml|yml|xml|md|sh|sql)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# ── Prevent install.php access after first run ────────────────────────────────
+# Uncomment after running the installer:
+# <Files "install.php">
+#     Order Allow,Deny
+#     Deny from all
+# </Files>
+
+# ── Rewrite rules ─────────────────────────────────────────────────────────────
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # اگه درخواست با /u شروع بشه، قوانین بعدی رو اعمال نکن و بذار فایل‌های اونجا مستقیماً لود بشن
+    # Static frontend assets under /u — serve directly
     RewriteCond %{REQUEST_URI} ^/u(/|$) [NC]
     RewriteRule ^ - [L]
 
-    # اگه فایل یا دایرکتوری فیزیکی وجود داره (مثل فایل‌های استاتیک)، مستقیماً لودش کن
+    # Existing physical files/directories — serve directly
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    # همه درخواست‌های دیگه رو به index.php سمفونی بفرست
+
+    # Everything else → Symfony front controller
     RewriteRule ^ /index.php [L]
+</IfModule>
+
+# ── PHP settings (if AllowOverride permits) ───────────────────────────────────
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log ../hesabixCore/var/log/php_errors.log
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
+    php_value memory_limit 256M
+    php_value max_execution_time 60
 </IfModule>

@@ -41,7 +41,7 @@ security:
             custom_authenticator: App\Security\BackAuthAuthenticator
             remember_me:
                 secret: '%kernel.secret%' # required
-                lifetime: 116121600 # 4 years in seconds
+                lifetime: 2592000 # 30 days
                 always_remember_me: true
 
     # Easy way to control access for large sections of your site
