@@ -654,6 +654,18 @@ const router = createRouter({
                 import ('../views/persons/weekplan/index.vue'),
         },
         {
+            path: '/acc/sales/pipeline',
+            name: 'sales_pipeline',
+            component: () =>
+                import ('../views/sales/pipeline/index.vue'),
+        },
+        {
+            path: '/acc/sales/center/:id',
+            name: 'sales_center_detail',
+            component: () =>
+                import ('../views/sales/center/detail.vue'),
+        },
+        {
             path: "/:catchAll(.*)",
             name: "not-found",
             component: () =>
