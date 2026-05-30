@@ -24,7 +24,6 @@ WORKDIR /var/www/html
 
 # Copy project files
 COPY hesabixCore/ /var/www/html/hesabixCore/
-COPY webUI/ /var/www/html/webUI/
 COPY public_html/ /var/www/html/public_html/
 
 # Set permissions
