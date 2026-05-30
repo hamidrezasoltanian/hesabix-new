@@ -92,18 +92,51 @@ function pad(n: number) { return n.toString().padStart(2, '0') }
 function daysInMonth(y: number, m: number) {
   if (m <= 6) return 31
   if (m <= 11) return 30
-  return 29
+  // Jalali leap: years where y % 33 ∈ {1,5,9,13,17,22,26,30}
+  return [1, 5, 9, 13, 17, 22, 26, 30].includes(y % 33) ? 30 : 29
+}
+
+// Port of the standard Jalali→Gregorian algorithm
+function jalaliToGregorian(jy: number, jm: number, jd: number): [number, number, number] {
+  let gy = jy > 979 ? 1600 : 621
+  if (jy > 979) jy -= 979
+  let days = 365 * jy + Math.floor(jy / 33) * 8 + Math.floor(((jy % 33) + 3) / 4) + 78 + jd +
+    (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186)
+  gy += 400 * Math.floor(days / 146097)
+  days %= 146097
+  if (days > 36524) { gy += 100 * Math.floor(--days / 36524); days %= 36524; if (days >= 365) days++ }
+  gy += 4 * Math.floor(days / 1461)
+  days %= 1461
+  gy += Math.floor((days - 1) / 365)
+  if (days > 365) days = (days - 1) % 365
+  let gd = days + 1
+  const ml = [0, 31, (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  let gm = 1
+  for (; gm <= 12; gm++) { if (gd <= ml[gm]) break; gd -= ml[gm] }
+  return [gy, gm, gd]
+}
+
+// Returns Iranian column index (0=Sat … 6=Fri) for the first day of a Jalali month
+function firstDayOfWeek(jy: number, jm: number): number {
+  const [gy, gm, gd] = jalaliToGregorian(jy, jm, 1)
+  const jsDay = new Date(gy, gm - 1, gd).getDay() // 0=Sun … 6=Sat
+  return (jsDay + 1) % 7 // Sat→0, Sun→1, Mon→2, Tue→3, Wed→4, Thu→5, Fri→6
 }
 
 const calendarWeeks = computed(() => {
   const y = currentYear.value, m = currentMonth.value
   const total = daysInMonth(y, m)
   const cells: any[] = []
+
+  // Leading empty cells so day 1 falls on the correct column
+  const offset = firstDayOfWeek(y, m)
+  for (let i = 0; i < offset; i++) cells.push(null)
+
   for (let d = 1; d <= total; d++) {
     const dateStr = `${y}/${pad(m)}/${pad(d)}`
     cells.push({ date: dateStr, day: d, isToday: dateStr === todayStr.value, events: events.value.filter(e => e.date === dateStr) })
   }
-  // Pad to full weeks of 7
+  // Trailing empty cells to complete last row
   while (cells.length % 7 !== 0) cells.push(null)
   const weeks = []
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
