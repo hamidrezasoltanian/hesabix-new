@@ -618,6 +618,72 @@ const router = createRouter({
                 import ('../views/storeroom/mod.vue'),
         },
         {
+            path: '/acc/storeroom/dashboard',
+            name: 'storeroom_dashboard',
+            component: () =>
+                import ('../views/storeroom/dashboard/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/count',
+            name: 'storeroom_count',
+            component: () =>
+                import ('../views/storeroom/count/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/reconcile',
+            name: 'storeroom_reconcile',
+            component: () =>
+                import ('../views/storeroom/reconcile/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/po',
+            name: 'storeroom_po',
+            component: () =>
+                import ('../views/storeroom/po/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/alerts',
+            name: 'storeroom_alerts',
+            component: () =>
+                import ('../views/storeroom/alerts/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/delivery',
+            name: 'storeroom_delivery',
+            component: () =>
+                import ('../views/storeroom/delivery/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/imed',
+            name: 'storeroom_imed',
+            component: () =>
+                import ('../views/storeroom/imed/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/analytics',
+            name: 'storeroom_analytics',
+            component: () =>
+                import ('../views/storeroom/analytics/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/recall',
+            name: 'storeroom_recall',
+            component: () =>
+                import ('../views/storeroom/recall/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/audit',
+            name: 'storeroom_audit',
+            component: () =>
+                import ('../views/storeroom/audit/index.vue'),
+        },
+        {
+            path: '/acc/storeroom/reports',
+            name: 'storeroom_reports',
+            component: () =>
+                import ('../views/storeroom/reports/index.vue'),
+        },
+        {
             path: '/acc/archive/list',
             name: 'archive_list',
             component: () =>
