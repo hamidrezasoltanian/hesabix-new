@@ -555,6 +555,39 @@ export default {
               }}</span>
           </v-list-item-title>
         </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/dashboard">
+          <v-list-item-title>داشبورد انبار</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/count">
+          <v-list-item-title>انبارگردانی</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/reconcile">
+          <v-list-item-title>تطبیق سه‌گانه</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/po">
+          <v-list-item-title>سفارش خرید</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/alerts">
+          <v-list-item-title>هشدارها</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/delivery">
+          <v-list-item-title>ارسال و رهگیری</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/imed">
+          <v-list-item-title>انبار مجازی IMED</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/analytics">
+          <v-list-item-title>تحلیل و پیش‌بینی</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/recall">
+          <v-list-item-title>مدیریت Recall</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/reports">
+          <v-list-item-title>گزارش‌ها</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.store" to="/acc/storeroom/audit">
+          <v-list-item-title>لاگ فعالیت</v-list-item-title>
+        </v-list-item>
       </v-list-group>
       <v-list-group v-show="permissions.buy || permissions.cost || permissions.plugAccproRfbuy">
         <template v-slot:activator="{ props }">
