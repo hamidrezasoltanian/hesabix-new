@@ -171,4 +171,46 @@ class StoreroomItem
 
         return $this;
     }
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $imedStatus = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $imedRef = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $salePrice = null;
+
+    public function getImedStatus(): ?string
+    {
+        return $this->imedStatus;
+    }
+
+    public function setImedStatus(?string $imedStatus): static
+    {
+        $this->imedStatus = $imedStatus;
+        return $this;
+    }
+
+    public function getImedRef(): ?string
+    {
+        return $this->imedRef;
+    }
+
+    public function setImedRef(?string $imedRef): static
+    {
+        $this->imedRef = $imedRef;
+        return $this;
+    }
+
+    public function getSalePrice(): ?string
+    {
+        return $this->salePrice;
+    }
+
+    public function setSalePrice(?string $salePrice): static
+    {
+        $this->salePrice = $salePrice;
+        return $this;
+    }
 }

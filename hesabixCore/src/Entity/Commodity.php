@@ -480,4 +480,60 @@ class Commodity
 
         return $this;
     }
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $ircCode = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $catalogCode = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $brand = null;
+
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $fullName = null;
+
+    public function getIrcCode(): ?string
+    {
+        return $this->ircCode;
+    }
+
+    public function setIrcCode(?string $ircCode): static
+    {
+        $this->ircCode = $ircCode;
+        return $this;
+    }
+
+    public function getCatalogCode(): ?string
+    {
+        return $this->catalogCode;
+    }
+
+    public function setCatalogCode(?string $catalogCode): static
+    {
+        $this->catalogCode = $catalogCode;
+        return $this;
+    }
+
+    public function getBrand(): ?string
+    {
+        return $this->brand;
+    }
+
+    public function setBrand(?string $brand): static
+    {
+        $this->brand = $brand;
+        return $this;
+    }
+
+    public function getFullName(): ?string
+    {
+        return $this->fullName;
+    }
+
+    public function setFullName(?string $fullName): static
+    {
+        $this->fullName = $fullName;
+        return $this;
+    }
 }
