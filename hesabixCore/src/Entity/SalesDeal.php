@@ -76,6 +76,9 @@ class SalesDeal
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $closedAt = null;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $priority = null;
+
     public function getId(): ?int { return $this->id; }
 
     public function getBid(): ?Business { return $this->bid; }
@@ -131,4 +134,7 @@ class SalesDeal
 
     public function getClosedAt(): ?string { return $this->closedAt; }
     public function setClosedAt(?string $closedAt): static { $this->closedAt = $closedAt; return $this; }
+
+    public function getPriority(): ?string { return $this->priority; }
+    public function setPriority(?string $priority): static { $this->priority = $priority; return $this; }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\DealActivity;
 use App\Entity\Person;
 use App\Entity\SalesCenter;
 use App\Entity\SalesDeal;
@@ -112,6 +113,7 @@ class SalesDealController extends AbstractController
         if (array_key_exists('preInvoiceId', $p)) $deal->setPreInvoiceId($p['preInvoiceId'] ? (int)$p['preInvoiceId'] : null);
         if (array_key_exists('storeroomTicketId', $p)) $deal->setStoreroomTicketId($p['storeroomTicketId'] ? (int)$p['storeroomTicketId'] : null);
         if (array_key_exists('sellDocId', $p)) $deal->setSellDocId($p['sellDocId'] ? (int)$p['sellDocId'] : null);
+        if (array_key_exists('priority', $p)) $deal->setPriority($p['priority'] ?: null);
 
         if ($isNew) {
             $deal->setSubmitter($this->getUser());
@@ -139,10 +141,15 @@ class SalesDealController extends AbstractController
         if (!$newStage || !in_array($newStage, self::STAGES))
             return $this->json(['result' => -1, 'msg' => 'مرحله نامعتبر']);
 
+        $oldStage = $deal->getStage();
         $deal->setStage($newStage);
         if (in_array($newStage, ['invoiced', 'collected'])) {
             $deal->setClosedAt($jdate->getToday());
         }
+        $activity = new DealActivity();
+        $activity->setDeal($deal)->setBid($acc['bid'])->setUser($this->getUser())
+            ->setType('status_change')->setContent($oldStage . ' → ' . $newStage)->setDate($jdate->getToday());
+        $em->persist($activity);
         $em->flush();
         $log->insert('فروش', 'تغییر مرحله فرصت «' . $deal->getTitle() . '» به ' . $newStage, $this->getUser(), $acc['bid']);
         return $this->json(['result' => 1, 'stage' => $deal->getStage()]);
@@ -351,6 +358,7 @@ class SalesDealController extends AbstractController
             'owner'            => $d->getOwner() ? ['id' => $d->getOwner()->getId(), 'mobile' => $d->getOwner()->getMobile()] : null,
             'submitter'        => $d->getSubmitter() ? ['id' => $d->getSubmitter()->getId(), 'mobile' => $d->getSubmitter()->getMobile()] : null,
             'approvedBy'       => $d->getApprovedBy() ? ['id' => $d->getApprovedBy()->getId(), 'mobile' => $d->getApprovedBy()->getMobile()] : null,
+            'priority'         => $d->getPriority(),
         ];
     }
 
