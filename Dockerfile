@@ -11,8 +11,7 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    nodejs \
-    npm
+    && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
@@ -40,13 +39,8 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Install PHP dependencies
 WORKDIR /var/www/html/hesabixCore
-RUN composer install --no-interaction --optimize-autoloader
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Install Node.js dependencies and build web UI
-WORKDIR /var/www/html/webUI
-RUN npm install && npm run build-only
-
-# Return to main directory
 WORKDIR /var/www/html
 
 # Expose ports
