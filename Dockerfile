@@ -6,15 +6,21 @@ FROM php:8.3-apache
 RUN printf 'Types: deb\nURIs: http://ftp.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\n\nTypes: deb\nURIs: http://security.debian.org/debian-security\nSuites: trixie-security\nComponents: main\n' \
     > /etc/apt/sources.list.d/debian.sources
 
-# Install only build-time C libraries needed for PHP extensions
+# Install build-time C libraries needed for PHP extensions
+# libfreetype-dev + libjpeg62-turbo-dev are required for imagettftext() in CaptchaService
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
+    libfreetype-dev \
+    libjpeg62-turbo-dev \
     zip \
     unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure GD with FreeType + JPEG support before installing
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
 # Compile PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
@@ -28,7 +34,10 @@ WORKDIR /var/www/html
 COPY hesabixCore/ /var/www/html/hesabixCore/
 COPY public_html/ /var/www/html/public_html/
 
-RUN chown -R www-data:www-data /var/www/html \
+RUN mkdir -p /var/www/html/hesabixCore/var/sessions \
+              /var/www/html/hesabixCore/var/log \
+              /var/www/html/hesabixCore/var/lock \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
 RUN a2enmod rewrite
