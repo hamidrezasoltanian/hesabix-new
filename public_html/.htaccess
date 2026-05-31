@@ -12,7 +12,8 @@ DirectoryIndex index.php index.html
 </IfModule>
 
 # ── Block access to sensitive files ──────────────────────────────────────────
-<FilesMatch "\.(env|lock|json|yaml|yml|xml|md|sh|sql)$">
+# Note: .json is NOT blocked here — manifest.json and API responses must be served.
+<FilesMatch "\.(env|lock|yaml|yml|xml|md|sh|sql)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
@@ -28,11 +29,16 @@ DirectoryIndex index.php index.html
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Static frontend assets under /u — serve directly
-    RewriteCond %{REQUEST_URI} ^/u(/|$) [NC]
+    # Real files under /u/ (assets, fonts, manifest.json, etc.) — serve directly
+    RewriteCond %{REQUEST_URI} ^/u/ [NC]
+    RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # Existing physical files/directories — serve directly
+    # Non-file paths under /u/ — fall back to Vue SPA entry point
+    RewriteCond %{REQUEST_URI} ^/u [NC]
+    RewriteRule ^ /u/index.html [L]
+
+    # Existing physical files/directories outside /u/ — serve directly
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
 
