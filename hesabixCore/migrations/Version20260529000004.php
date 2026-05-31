@@ -20,8 +20,12 @@ final class Version20260529000004 extends AbstractMigration
         $this->addSql('ALTER TABLE hesabdari_table MODIFY id INT NOT NULL AUTO_INCREMENT');
 
         // ── 1. Soft delete column (idempotent: skip if already added by a partial run) ──
-        $table = $schema->hasTable('hesabdari_table') ? $schema->getTable('hesabdari_table') : null;
-        if ($table === null || !$table->hasColumn('active')) {
+        // NOTE: $schema is NOT the current DB state in Doctrine Migrations 3 — use connection directly
+        $activeExists = (bool) $this->connection->executeQuery(
+            "SELECT COUNT(*) FROM information_schema.columns
+             WHERE table_schema = DATABASE() AND table_name = 'hesabdari_table' AND column_name = 'active'"
+        )->fetchOne();
+        if (!$activeExists) {
             $this->addSql('ALTER TABLE hesabdari_table ADD active TINYINT(1) NOT NULL DEFAULT 1');
         }
 
