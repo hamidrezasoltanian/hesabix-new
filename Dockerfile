@@ -1,9 +1,9 @@
 # Use PHP 8.3 with Apache as base image
 FROM php:8.3-apache
 
-# Switch apt to HTTPS — port 80 to deb.debian.org may be filtered
-RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true && \
-    sed -i 's|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+# Use Iranian mirror to avoid network filtering of deb.debian.org
+RUN printf 'Types: deb\nURIs: http://ftp.ir.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\n\nTypes: deb\nURIs: http://ftp.ir.debian.org/debian-security\nSuites: trixie-security\nComponents: main\n' \
+    > /etc/apt/sources.list.d/debian.sources
 
 # Install only build-time C libraries needed for PHP extensions
 RUN apt-get update && apt-get install -y \
