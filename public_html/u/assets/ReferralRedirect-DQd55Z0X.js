@@ -1,0 +1,1 @@
+import{_ as a}from"./main-C8GX40NG.js";import{af as s,m as c}from"./vendor-BplqQk0C.js";const n={name:"ReferralRedirect",beforeRouteEnter(r,o,t){const e=r.params.param;e&&localStorage.setItem("inviteCode",e),t("/user/register")}};function f(r,o,t,e,i,m){return s(),c("div")}const l=a(n,[["render",f]]);export{l as default};
