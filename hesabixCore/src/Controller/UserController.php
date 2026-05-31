@@ -317,6 +317,7 @@ class UserController extends AbstractController
         EntityManagerInterface $entityManager,
         CaptchaService $captchaService
     ): Response {
+        try {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
@@ -437,6 +438,15 @@ class UserController extends AbstractController
                 'message' => 'حسابت فعال شده است. لطفاً وارد شوید.',
                 'redirect' => '/user/login'
             ]));
+        }
+        } catch (\Throwable $e) {
+            return $this->json([
+                'Success' => false,
+                'debug_error' => $e->getMessage(),
+                'debug_class' => get_class($e),
+                'debug_file' => $e->getFile() . ':' . $e->getLine(),
+                'debug_trace' => substr($e->getTraceAsString(), 0, 2000),
+            ], 500);
         }
     }
 
