@@ -24,6 +24,18 @@ class PrintTemplate
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $cashdeskTicket = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $name = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $invoiceTemplate = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $preinvoiceTemplate = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $storeroomTemplate = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -64,4 +76,16 @@ class PrintTemplate
 
         return $this;
     }
+
+    public function getName(): ?string { return $this->name; }
+    public function setName(?string $name): static { $this->name = $name; return $this; }
+
+    public function getInvoiceTemplate(): ?string { return $this->invoiceTemplate; }
+    public function setInvoiceTemplate(?string $invoiceTemplate): static { $this->invoiceTemplate = $invoiceTemplate; return $this; }
+
+    public function getPreinvoiceTemplate(): ?string { return $this->preinvoiceTemplate; }
+    public function setPreinvoiceTemplate(?string $preinvoiceTemplate): static { $this->preinvoiceTemplate = $preinvoiceTemplate; return $this; }
+
+    public function getStoreroomTemplate(): ?string { return $this->storeroomTemplate; }
+    public function setStoreroomTemplate(?string $storeroomTemplate): static { $this->storeroomTemplate = $storeroomTemplate; return $this; }
 }

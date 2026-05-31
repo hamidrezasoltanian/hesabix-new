@@ -116,6 +116,10 @@ class Person
     #[ORM\Column(nullable: true)]
     private ?bool $speedAccess = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?User $responsible = null;
+
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: Cheque::class)]
     private Collection $cheques;
 
@@ -899,4 +903,7 @@ class Person
 
         return $this;
     }
+
+    public function getResponsible(): ?User { return $this->responsible; }
+    public function setResponsible(?User $responsible): static { $this->responsible = $responsible; return $this; }
 }

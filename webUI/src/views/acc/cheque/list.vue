@@ -61,6 +61,8 @@
     </template>
   </v-snackbar>
 
+  <UpcomingAlert />
+
   <v-window v-model="tab">
     <v-window-item value="input">
       <v-text-field class="pt-1" v-model="searchValueInput" prepend-inner-icon="mdi-magnify" label="جست و جو"
@@ -302,11 +304,13 @@
 import axios from "axios";
 import { ref } from "vue";
 import Hdatepicker from '@/components/forms/Hdatepicker.vue';
+import UpcomingAlert from './UpcomingAlert.vue';
 
 export default {
   name: "list",
   components: {
-    Hdatepicker
+    Hdatepicker,
+    UpcomingAlert
   },
   data: () => ({
     tab: 'input',

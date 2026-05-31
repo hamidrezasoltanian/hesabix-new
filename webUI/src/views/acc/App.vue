@@ -369,6 +369,9 @@ export default {
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/shareholders/list') }}</span>
           </v-list-item-title>
         </v-list-item>
+        <v-list-item v-if="permissions.persons" to="/acc/persons/responsible">
+          <v-list-item-title>مسئول استان / مشتری</v-list-item-title>
+        </v-list-item>
       </v-list-group>
       <v-list-group v-show="permissions.commodity">
         <template v-slot:activator="{ props }">
@@ -738,13 +741,16 @@ export default {
           </v-list-item-title>
         </v-list-item>
       </v-list-group>
-      <v-list-item v-show="permissions.report" to="/acc/reports/list">
-        <template v-slot:prepend><v-icon icon="mdi-poll"></v-icon></template>
-        <v-list-item-title>
-          {{ $t('drawer.reports') }}
-          <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/reports/list') }}</span>
-        </v-list-item-title>
-      </v-list-item>
+      <v-list-group v-show="permissions.report">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" prepend-icon="mdi-poll" :title="$t('drawer.reports')"/>
+        </template>
+        <v-list-item to="/acc/reports/list"><v-list-item-title>گزارش‌ها</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/reports/sales/period"><v-list-item-title>گزارش دوره‌ای فروش</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/reports/sales/performance"><v-list-item-title>عملکرد فروش</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/reports/receivables/aging"><v-list-item-title>سنی مطالبات</v-list-item-title></v-list-item>
+        <v-list-item to="/acc/reports/receivables/ranking"><v-list-item-title>رتبه‌بندی مشتریان</v-list-item-title></v-list-item>
+      </v-list-group>
       <v-list-subheader color="primary">{{ $t('drawer.settings') }}</v-list-subheader>
       <v-list-group v-show="permissions.settings || permissions.log || permissions.permission">
         <template v-slot:activator="{ props }">
@@ -775,6 +781,12 @@ export default {
             {{ $t('drawer.user_perms') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/business/users') }}</span>
           </v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.settings" to="/acc/settings/perm-templates">
+          <v-list-item-title>قالب‌های سطح دسترسی</v-list-item-title>
+        </v-list-item>
+        <v-list-item v-if="permissions.settings" to="/acc/printers/template-editor">
+          <v-list-item-title>ویرایشگر قالب چاپ</v-list-item-title>
         </v-list-item>
         <v-list-item v-if="permissions.owner" to="/acc/business/apis">
           <v-list-item-title>

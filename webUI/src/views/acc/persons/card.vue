@@ -8,6 +8,9 @@
       {{ $t('pages.person_card.title') }}
     </v-toolbar-title>
     <v-spacer />
+    <v-btn color="secondary" size="small" prepend-icon="mdi-folder-account" :to="`/acc/persons/file/${selectedPerson?.id}`" v-if="selectedPerson?.id">
+      پرونده مشتری
+    </v-btn>
     <v-btn color="primary" size="small" @click="dialog = true" :loading="loading" prepend-icon="mdi-bank">
       {{ $t('dialog.banks_accounts') }}
     </v-btn>

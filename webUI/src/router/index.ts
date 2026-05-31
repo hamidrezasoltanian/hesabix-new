@@ -988,6 +988,46 @@ const router = createRouter({
             component: () =>
                 import('../views/acc/plugins/hrm/docs/view.vue'),
         },
+        {
+            path: 'reports/sales/period',
+            name: 'report_sales_period',
+            component: () => import('../views/acc/reports/sales/period.vue'),
+        },
+        {
+            path: 'reports/sales/performance',
+            name: 'report_sales_performance',
+            component: () => import('../views/acc/reports/sales/performance.vue'),
+        },
+        {
+            path: 'reports/receivables/aging',
+            name: 'report_receivables_aging',
+            component: () => import('../views/acc/reports/receivables/aging.vue'),
+        },
+        {
+            path: 'reports/receivables/ranking',
+            name: 'report_receivables_ranking',
+            component: () => import('../views/acc/reports/receivables/ranking.vue'),
+        },
+        {
+            path: 'persons/responsible',
+            name: 'person_responsible',
+            component: () => import('../views/acc/persons/responsible.vue'),
+        },
+        {
+            path: 'persons/file/:id',
+            name: 'person_customer_file',
+            component: () => import('../views/acc/persons/customerfile.vue'),
+        },
+        {
+            path: 'settings/perm-templates',
+            name: 'settings_perm_templates',
+            component: () => import('../views/acc/settings/perm_templates.vue'),
+        },
+        {
+            path: 'printers/template-editor',
+            name: 'printers_template_editor',
+            component: () => import('../views/acc/printers/template_editor.vue'),
+        },
     ],
 },
     {

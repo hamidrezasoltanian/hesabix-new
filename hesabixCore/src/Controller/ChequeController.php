@@ -892,4 +892,53 @@ class ChequeController extends AbstractController
             'result' => 'ok'
         ]);
     }
+
+    #[Route('/api/cheque/upcoming', name: 'api_cheque_upcoming', methods: ['GET'])]
+    public function api_cheque_upcoming(Request $request, Access $access, EntityManagerInterface $entityManager, Jdate $jdate): JsonResponse
+    {
+        $acc = $access->hasRole('cheque');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $today = $jdate->GetTodayDate();
+        $sevenDaysLaterTs = time() + (7 * 86400);
+        $sevenDaysLater = $jdate->jdate('Y/m/d', $sevenDaysLaterTs);
+
+        $cheques = $entityManager->getRepository(Cheque::class)->findBy([
+            'bid' => $acc['bid'],
+            'type' => 'output',
+            'locked' => false,
+            'rejected' => null,
+        ]);
+
+        $result = [];
+        foreach ($cheques as $cheque) {
+            $payDate = $cheque->getPayDate();
+            if (!$payDate) {
+                continue;
+            }
+
+            if ($cheque->isRejected()) {
+                continue;
+            }
+
+            if ($payDate >= $today && $payDate <= $sevenDaysLater) {
+                // Convert Jalali payDate to timestamp for daysUntilDue calculation
+                $todayTs = $jdate->jallaliToUnixTime($today, false);
+                $payDateTs = $jdate->jallaliToUnixTime($payDate, false);
+                $daysUntilDue = (int) round(($payDateTs - $todayTs) / 86400);
+
+                $result[] = [
+                    'id' => $cheque->getId(),
+                    'amount' => $cheque->getAmount(),
+                    'payDate' => $payDate,
+                    'person' => $cheque->getPerson() ? $cheque->getPerson()->getNikename() : null,
+                    'bankName' => $cheque->getBankOncheque(),
+                    'daysUntilDue' => $daysUntilDue,
+                ];
+            }
+        }
+
+        return $this->json($result);
+    }
 }

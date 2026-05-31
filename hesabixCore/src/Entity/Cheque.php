@@ -83,6 +83,9 @@ class Cheque
     #[ORM\Column(length: 25, nullable: true)]
     private ?string $transferDate = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $reminderSent = false;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -371,6 +374,18 @@ class Cheque
     public function setTransferDate(?string $transferDate): static
     {
         $this->transferDate = $transferDate;
+
+        return $this;
+    }
+
+    public function isReminderSent(): bool
+    {
+        return $this->reminderSent;
+    }
+
+    public function setReminderSent(bool $reminderSent): static
+    {
+        $this->reminderSent = $reminderSent;
 
         return $this;
     }
