@@ -36,7 +36,7 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Install PHP dependencies
 WORKDIR /var/www/html/hesabixCore
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
 
 WORKDIR /var/www/html
 EXPOSE 80
