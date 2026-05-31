@@ -73,7 +73,7 @@ class BusinessController extends AbstractController
     #[Route('/api/business/list', name: 'api_bussiness_list')]
     public function api_bussiness_list(Extractor $extractor, Request $request, #[CurrentUser] ?User $user, Access $access, Explore $explore, EntityManagerInterface $entityManager, Provider $provider): Response
     {
-
+        try {
         $buss = $entityManager->getRepository(Permission::class)->findBy([
             'user' => $user
         ]);
@@ -86,6 +86,9 @@ class BusinessController extends AbstractController
             return $this->json($extractor->operationSuccess($response));
         }
         return $this->json($response);
+        } catch (\Throwable $e) {
+            return $this->json(['debug_error' => $e->getMessage(), 'debug_class' => get_class($e), 'debug_file' => $e->getFile().':'.$e->getLine()], 500);
+        }
     }
 
     /**
