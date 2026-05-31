@@ -1,8 +1,9 @@
 # Use PHP 8.3 with Apache as base image
 FROM php:8.3-apache
 
-# Force plain HTTP (port 80) — HTTPS port 443 is blocked; HTTP resolves correctly
-RUN printf 'Types: deb\nURIs: http://deb.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\n\nTypes: deb\nURIs: http://security.debian.org/debian-security\nSuites: trixie-security\nComponents: main\n' \
+# deb.debian.org is Fastly CDN (146.75.x.x) — blocked by Iranian ISP on both port 80 and 443.
+# ftp.debian.org is a direct Debian server (non-Fastly) and security.debian.org already works.
+RUN printf 'Types: deb\nURIs: http://ftp.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\n\nTypes: deb\nURIs: http://security.debian.org/debian-security\nSuites: trixie-security\nComponents: main\n' \
     > /etc/apt/sources.list.d/debian.sources
 
 # Install only build-time C libraries needed for PHP extensions
