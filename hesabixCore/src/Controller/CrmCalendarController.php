@@ -71,7 +71,7 @@ class CrmCalendarController extends AbstractController
     {
         $acc = $access->hasRole('join'); if (!$acc) throw $this->createAccessDeniedException();
         $perms = $em->createQueryBuilder()
-            ->select('u.id, u.mobile, u.name')->from('App\Entity\Permission', 'p')
+            ->select('u.id, u.mobile, u.fullName AS name')->from('App\Entity\Permission', 'p')
             ->join('p.user', 'u')
             ->where('p.bid = :bid')->setParameter('bid', $acc['bid'])
             ->getQuery()->getScalarResult();
