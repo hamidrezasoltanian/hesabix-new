@@ -18,7 +18,7 @@ final class Version20260529000005 extends AbstractMigration
     {
         // ── 1. New CRM columns on sales_center ────────────────────────────────
         $this->addSql("ALTER TABLE sales_center
-            ADD lead VARCHAR(30) DEFAULT NULL,
+            ADD `lead` VARCHAR(30) DEFAULT NULL,
             ADD crm_status VARCHAR(30) DEFAULT 'no_contact',
             ADD followup_date VARCHAR(20) DEFAULT NULL");
 
@@ -79,6 +79,6 @@ final class Version20260529000005 extends AbstractMigration
         $this->addSql('DROP TABLE activity_log');
         $this->addSql('DROP TABLE sales_center_tag_assignment');
         $this->addSql('DROP TABLE sales_center_tag');
-        $this->addSql('ALTER TABLE sales_center DROP COLUMN lead, DROP COLUMN crm_status, DROP COLUMN followup_date');
+        $this->addSql('ALTER TABLE sales_center DROP COLUMN `lead`, DROP COLUMN crm_status, DROP COLUMN followup_date');
     }
 }
