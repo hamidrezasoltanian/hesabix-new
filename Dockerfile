@@ -1,8 +1,8 @@
 # Use PHP 8.3 with Apache as base image
 FROM php:8.3-apache
 
-# Use Iranian mirror to avoid network filtering of deb.debian.org
-RUN printf 'Types: deb\nURIs: http://ftp.ir.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\n\nTypes: deb\nURIs: http://ftp.ir.debian.org/debian-security\nSuites: trixie-security\nComponents: main\n' \
+# Force plain HTTP (port 80) — HTTPS port 443 is blocked; HTTP resolves correctly
+RUN printf 'Types: deb\nURIs: http://deb.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\n\nTypes: deb\nURIs: http://security.debian.org/debian-security\nSuites: trixie-security\nComponents: main\n' \
     > /etc/apt/sources.list.d/debian.sources
 
 # Install only build-time C libraries needed for PHP extensions
