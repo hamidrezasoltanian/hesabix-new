@@ -146,13 +146,6 @@ class BusinessController extends AbstractController
             }
             if (!$isNew && !$access->hasRole('settings'))
                 throw $this->createAccessDeniedException();
-            //check for that user register business before
-            $oldBid = $entityManager->getRepository(Business::class)->findOneBy(['owner' => $this->getUser()], ['id' => 'DESC']);
-            if ($oldBid && !$business->getId()) {
-                if ($oldBid->getDateSubmit() > time() - 86400) {
-                    return $this->json(['result' => 3]);
-                }
-            }
             $business->setName($params['name']);
             $business->setOwner($this->getUser());
             $business->setLegalName($params['legal_name']);
