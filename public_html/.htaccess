@@ -1,4 +1,4 @@
-DirectoryIndex index.php
+DirectoryIndex index.php index.html
 
 # ── Security Headers ──────────────────────────────────────────────────────────
 <IfModule mod_headers.c>
