@@ -935,6 +935,72 @@ const router = createRouter({
                 import('../views/acc/storeroom/mod.vue'),
         },
         {
+            path: 'storeroom/dashboard',
+            name: 'storeroom_dashboard',
+            component: () =>
+                import('../views/acc/storeroom/dashboard/index.vue'),
+        },
+        {
+            path: 'storeroom/analytics',
+            name: 'storeroom_analytics',
+            component: () =>
+                import('../views/acc/storeroom/analytics/index.vue'),
+        },
+        {
+            path: 'storeroom/alerts',
+            name: 'storeroom_alerts',
+            component: () =>
+                import('../views/acc/storeroom/alerts/index.vue'),
+        },
+        {
+            path: 'storeroom/audit',
+            name: 'storeroom_audit',
+            component: () =>
+                import('../views/acc/storeroom/audit/index.vue'),
+        },
+        {
+            path: 'storeroom/count',
+            name: 'storeroom_count',
+            component: () =>
+                import('../views/acc/storeroom/count/index.vue'),
+        },
+        {
+            path: 'storeroom/delivery',
+            name: 'storeroom_delivery',
+            component: () =>
+                import('../views/acc/storeroom/delivery/index.vue'),
+        },
+        {
+            path: 'storeroom/imed',
+            name: 'storeroom_imed',
+            component: () =>
+                import('../views/acc/storeroom/imed/index.vue'),
+        },
+        {
+            path: 'storeroom/po',
+            name: 'storeroom_po',
+            component: () =>
+                import('../views/acc/storeroom/po/index.vue'),
+        },
+        {
+            path: 'storeroom/recall',
+            name: 'storeroom_recall',
+            component: () =>
+                import('../views/acc/storeroom/recall/index.vue'),
+        },
+        {
+            path: 'storeroom/reconcile',
+            name: 'storeroom_reconcile',
+            component: () =>
+                import('../views/acc/storeroom/reconcile/index.vue'),
+        },
+        {
+            path: 'storeroom/reports',
+            name: 'storeroom_reports',
+            component: () =>
+                import('../views/acc/storeroom/reports/index.vue'),
+        },
+        {
             path: 'archive/list',
             name: 'archive_list',
             component: () =>
@@ -1027,6 +1093,76 @@ const router = createRouter({
             path: 'printers/template-editor',
             name: 'printers_template_editor',
             component: () => import('../views/acc/printers/template_editor.vue'),
+        },
+        {
+            path: 'sales/centers',
+            name: 'sales_centers',
+            component: () => import('../views/acc/sales/centers/index.vue'),
+        },
+        {
+            path: 'sales/center/:id',
+            name: 'sales_center_detail',
+            component: () => import('../views/acc/sales/center/detail.vue'),
+        },
+        {
+            path: 'sales/activity',
+            name: 'sales_activity',
+            component: () => import('../views/acc/sales/activity/index.vue'),
+        },
+        {
+            path: 'sales/pipeline',
+            name: 'sales_pipeline',
+            component: () => import('../views/acc/sales/pipeline/index.vue'),
+        },
+        {
+            path: 'sales/calendar',
+            name: 'sales_calendar',
+            component: () => import('../views/acc/sales/calendar/index.vue'),
+        },
+        {
+            path: 'sales/checklist',
+            name: 'sales_checklist',
+            component: () => import('../views/acc/sales/checklist/index.vue'),
+        },
+        {
+            path: 'sales/kpi',
+            name: 'sales_kpi',
+            component: () => import('../views/acc/sales/kpi/index.vue'),
+        },
+        {
+            path: 'sales/manager',
+            name: 'sales_manager',
+            component: () => import('../views/acc/sales/manager/index.vue'),
+        },
+        {
+            path: 'sales/provinces',
+            name: 'sales_provinces',
+            component: () => import('../views/acc/sales/provinces/index.vue'),
+        },
+        {
+            path: 'sales/import',
+            name: 'sales_import',
+            component: () => import('../views/acc/sales/import/index.vue'),
+        },
+        {
+            path: 'sales/backup',
+            name: 'sales_backup',
+            component: () => import('../views/acc/sales/backup/index.vue'),
+        },
+        {
+            path: 'persons/followup',
+            name: 'persons_followup',
+            component: () => import('../views/acc/persons/followup/list.vue'),
+        },
+        {
+            path: 'persons/weekplan',
+            name: 'persons_weekplan',
+            component: () => import('../views/acc/persons/weekplan/index.vue'),
+        },
+        {
+            path: 'plugins/onlinestore/dashboard',
+            name: 'plugin_onlinestore_dashboard',
+            component: () => import('../views/acc/plugins/onlinestore/dashboard.vue'),
         },
     ],
 },
