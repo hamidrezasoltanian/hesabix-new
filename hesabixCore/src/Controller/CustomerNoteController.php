@@ -24,7 +24,7 @@ class CustomerNoteController extends AbstractController
             'date' => $n->getDate(),
             'reminderDate' => $n->getReminderDate(),
             'mentionedMobile' => $n->getMentionedMobile(),
-            'user' => $n->getUser() ? ['id' => $n->getUser()->getId(), 'mobile' => $n->getUser()->getMobile(), 'name' => $n->getUser()->getName()] : null,
+            'user' => $n->getUser() ? ['id' => $n->getUser()->getId(), 'mobile' => $n->getUser()->getMobile(), 'name' => $n->getUser()->getFullName()] : null,
         ];
     }
 

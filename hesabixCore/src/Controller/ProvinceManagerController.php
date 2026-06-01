@@ -26,7 +26,7 @@ class ProvinceManagerController extends AbstractController
             $result[] = [
                 'id' => $item->getId(),
                 'province' => $item->getProvince(),
-                'user' => $item->getUser() ? ['id' => $item->getUser()->getId(), 'mobile' => $item->getUser()->getMobile(), 'name' => $item->getUser()->getName()] : null,
+                'user' => $item->getUser() ? ['id' => $item->getUser()->getId(), 'mobile' => $item->getUser()->getMobile(), 'name' => $item->getUser()->getFullName()] : null,
             ];
         }
         return $this->json($result);
@@ -102,7 +102,7 @@ class ProvinceManagerController extends AbstractController
         if (!$acc) throw $this->createAccessDeniedException();
 
         $persons = $em->createQueryBuilder()
-            ->select('p.id, p.nikename, p.name, p.ostan, u.id as userId, u.mobile as userMobile, u.name as userName')
+            ->select('p.id, p.nikename, p.name, p.ostan, u.id as userId, u.mobile as userMobile, u.fullName as userName')
             ->from(Person::class, 'p')
             ->leftJoin('p.responsible', 'u')
             ->where('p.bid = :bid')

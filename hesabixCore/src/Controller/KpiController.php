@@ -110,7 +110,7 @@ class KpiController extends AbstractController
             'month'        => $month,
             'workingDays'  => $workingDays,
             'weeksInMonth' => $weeksInMonth,
-            'user'         => ['id'=>$user->getId(),'mobile'=>$user->getMobile(),'name'=>$user->getName()],
+            'user'         => ['id'=>$user->getId(),'mobile'=>$user->getMobile(),'name'=>$user->getFullName()],
             'kpis'         => [
                 ['key'=>'call',       'label'=>'تماس روزانه',     'weight'=>15, 'actual'=>$data['call'],                    'target'=>$callTarget,    'unit'=>'عدد'],
                 ['key'=>'visit',      'label'=>'ویزیت هفتگی',     'weight'=>15, 'actual'=>$data['visit'],                   'target'=>$visitTarget,   'unit'=>'عدد'],

@@ -92,7 +92,7 @@ class SalesReportController extends AbstractController
         foreach ($docs as $doc) {
             $user = $doc->getSubmitter();
             $uid = $user ? $user->getId() : 0;
-            $uName = $user ? ($user->getName() ?? $user->getMobile()) : 'نامشخص';
+            $uName = $user ? ($user->getFullName() ?? $user->getMobile()) : 'نامشخص';
             if (!isset($byUser[$uid])) {
                 $byUser[$uid] = ['userId' => $uid, 'userName' => $uName, 'count' => 0, 'totalAmount' => 0];
             }
