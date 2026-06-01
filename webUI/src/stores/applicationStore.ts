@@ -3,7 +3,10 @@ import {defineStore} from "pinia";
 export const applicationStore = defineStore('application',{
     state () {
         return {
-            title: 'app.name'
+            title: 'app.name',
+            activeBid: localStorage.getItem('activeBid') ?? '',
+            activeYear: localStorage.getItem('activeYear') ?? '',
+            activeMoney: localStorage.getItem('activeMoney') ?? '',
         }
     },
     actions: {
@@ -15,4 +18,6 @@ export const applicationStore = defineStore('application',{
         }
     }
 });
+
+export const useApplicationStore = applicationStore;
 export default applicationStore;
