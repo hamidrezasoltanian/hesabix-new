@@ -231,34 +231,21 @@ class ClickReportController extends AbstractController
         $docs = $qb->getQuery()->getResult();
         $items = [];
         $maxId = $afterId;
+        $seen = [];
         foreach ($docs as $doc) {
             $maxId = max($maxId, (int)$doc->getId());
-            $personName = null;
-            $personId = null;
-            $accountCode = null;
-            foreach ($doc->getHesabdariRows() as $row) {
-                if ($row->getPerson() && !$personId) {
-                    $personId = $row->getPerson()->getId();
-                    $personName = $row->getPerson()->getName() ?: $row->getPerson()->getNikename();
+            $items[] = $this->mapDocItem($doc);
+            $seen[(int)$doc->getId()] = true;
+        }
+        // Incremental cursor is id-based; cancelled older docs must still re-appear as tombstones.
+        if ($afterId > 0) {
+            foreach ($this->cancelledDocs($token->getBid(), $types, $afterId) as $doc) {
+                $id = (int)$doc->getId();
+                if (isset($seen[$id])) {
+                    continue;
                 }
-                if ($row->getRef() && !$accountCode) {
-                    $accountCode = $row->getRef()->getCode();
-                }
+                $items[] = $this->mapDocItem($doc);
             }
-            $items[] = [
-                'id' => $doc->getId(),
-                'code' => $doc->getCode(),
-                'date' => $doc->getDate(),
-                'amount' => $doc->getAmount(),
-                'remaining' => null,
-                'due_date' => null,
-                'description' => $doc->getDes(),
-                'account_code' => $accountCode,
-                'person_id' => $personId,
-                'person_name' => $personName,
-                'doc_code' => $doc->getCode(),
-                'tombstone' => $this->isCancelledDoc($doc),
-            ];
         }
         return $this->json([
             'success' => true,
@@ -266,5 +253,54 @@ class ClickReportController extends AbstractController
             'next_cursor' => $maxId ? (string)$maxId : null,
             'official' => false,
         ], Response::HTTP_OK);
+    }
+
+    private function cancelledDocs($bid, array $types, int $maxId): array
+    {
+        return $this->em->createQueryBuilder()
+            ->select('d')
+            ->from(HesabdariDoc::class, 'd')
+            ->where('d.bid = :bid')
+            ->andWhere('d.type IN (:types)')
+            ->andWhere('d.id <= :maxId')
+            ->andWhere('LOWER(d.status) IN (:st)')
+            ->setParameter('bid', $bid)
+            ->setParameter('types', $types)
+            ->setParameter('maxId', $maxId)
+            ->setParameter('st', ['0', 'cancel', 'cancelled', 'void', 'deleted'])
+            ->orderBy('d.id', 'ASC')
+            ->setMaxResults(200)
+            ->getQuery()
+            ->getResult();
+    }
+
+    private function mapDocItem(HesabdariDoc $doc): array
+    {
+        $personName = null;
+        $personId = null;
+        $accountCode = null;
+        foreach ($doc->getHesabdariRows() as $row) {
+            if ($row->getPerson() && !$personId) {
+                $personId = $row->getPerson()->getId();
+                $personName = $row->getPerson()->getName() ?: $row->getPerson()->getNikename();
+            }
+            if ($row->getRef() && !$accountCode) {
+                $accountCode = $row->getRef()->getCode();
+            }
+        }
+        return [
+            'id' => $doc->getId(),
+            'code' => $doc->getCode(),
+            'date' => $doc->getDate(),
+            'amount' => $doc->getAmount(),
+            'remaining' => null,
+            'due_date' => null,
+            'description' => $doc->getDes(),
+            'account_code' => $accountCode,
+            'person_id' => $personId,
+            'person_name' => $personName,
+            'doc_code' => $doc->getCode(),
+            'tombstone' => $this->isCancelledDoc($doc),
+        ];
     }
 }
