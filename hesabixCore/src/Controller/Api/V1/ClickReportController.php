@@ -152,30 +152,27 @@ class ClickReportController extends AbstractController
         $docs = $qb->getQuery()->getResult();
         $items = [];
         $maxDocId = $afterId;
+        $seen = [];
         foreach ($docs as $doc) {
             $maxDocId = max($maxDocId, (int)$doc->getId());
-            $tombstone = $this->isCancelledDoc($doc);
-            foreach ($doc->getHesabdariRows() as $row) {
-                $ref = $row->getRef();
-                $person = $row->getPerson();
-                $bank = $row->getBank();
-                $items[] = [
-                    'id' => $row->getId(),
-                    'doc_id' => $doc->getId(),
-                    'doc_code' => $doc->getCode(),
-                    'date' => $doc->getDate(),
-                    'doc_type' => $doc->getType(),
-                    'account_code' => $ref ? $ref->getCode() : null,
-                    'account_name' => $ref ? $ref->getName() : null,
-                    'debit' => $row->getBd(),
-                    'credit' => $row->getBs(),
-                    'person_id' => $person ? $person->getId() : null,
-                    'bank_id' => $bank ? $bank->getId() : null,
-                    'tombstone' => $tombstone,
-                ];
+            $seen[(int)$doc->getId()] = true;
+            foreach ($this->mapGlRows($doc) as $row) {
+                $items[] = $row;
             }
         }
-        return $this->json(['success' => true, 'items' => $items, 'next_cursor' => $maxDocId ? (string)$maxDocId : null]);
+        // Same as docsOfType: id cursor skips older cancelled docs unless we re-emit tombstones.
+        if ($afterId > 0) {
+            foreach ($this->cancelledDocs($token->getBid(), null, $afterId) as $doc) {
+                $id = (int)$doc->getId();
+                if (isset($seen[$id])) {
+                    continue;
+                }
+                foreach ($this->mapGlRows($doc) as $row) {
+                    $items[] = $row;
+                }
+            }
+        }
+        return $this->json(['success' => true, 'items' => $items, 'next_cursor' => $maxDocId ? (string)$maxDocId : null, 'official' => false]);
     }
 
     #[Route('/reports/ap-open', name: 'api_v1_click_sync_reports_ap', methods: ['POST'])]
@@ -255,23 +252,49 @@ class ClickReportController extends AbstractController
         ], Response::HTTP_OK);
     }
 
-    private function cancelledDocs($bid, array $types, int $maxId): array
+    private function cancelledDocs($bid, ?array $types, int $maxId): array
     {
-        return $this->em->createQueryBuilder()
+        $qb = $this->em->createQueryBuilder()
             ->select('d')
             ->from(HesabdariDoc::class, 'd')
             ->where('d.bid = :bid')
-            ->andWhere('d.type IN (:types)')
             ->andWhere('d.id <= :maxId')
             ->andWhere('LOWER(d.status) IN (:st)')
             ->setParameter('bid', $bid)
-            ->setParameter('types', $types)
             ->setParameter('maxId', $maxId)
             ->setParameter('st', ['0', 'cancel', 'cancelled', 'void', 'deleted'])
             ->orderBy('d.id', 'ASC')
-            ->setMaxResults(200)
-            ->getQuery()
-            ->getResult();
+            ->setMaxResults(200);
+        if ($types) {
+            $qb->andWhere('d.type IN (:types)')->setParameter('types', $types);
+        }
+        return $qb->getQuery()->getResult();
+    }
+
+    private function mapGlRows(HesabdariDoc $doc): array
+    {
+        $tombstone = $this->isCancelledDoc($doc);
+        $items = [];
+        foreach ($doc->getHesabdariRows() as $row) {
+            $ref = $row->getRef();
+            $person = $row->getPerson();
+            $bank = $row->getBank();
+            $items[] = [
+                'id' => $row->getId(),
+                'doc_id' => $doc->getId(),
+                'doc_code' => $doc->getCode(),
+                'date' => $doc->getDate(),
+                'doc_type' => $doc->getType(),
+                'account_code' => $ref ? $ref->getCode() : null,
+                'account_name' => $ref ? $ref->getName() : null,
+                'debit' => $row->getBd(),
+                'credit' => $row->getBs(),
+                'person_id' => $person ? $person->getId() : null,
+                'bank_id' => $bank ? $bank->getId() : null,
+                'tombstone' => $tombstone,
+            ];
+        }
+        return $items;
     }
 
     private function mapDocItem(HesabdariDoc $doc): array
